@@ -9,7 +9,7 @@ This repo includes:
 
 - `Master.cpp` — server/host program
 - `Client.cpp` — worker/client program (uses embedded CPython)
-- `test_task.py` — example Python tasks
+- `testThings` — example Python tasks
 
 ---
 
@@ -19,6 +19,9 @@ This repo includes:
 2) Start `Master.exe` (server) — it listens on port 8080.
 3) Start one or more `Client.exe` instances — they will connect to the server and send a 64-byte hostname.
 4) On the server, use `client_list` to see clients, then enter the client's index to send a file and function name.
+OR
+1) make sure you have Python installed, the prebuilt .exe expects python 3.14
+2) run the master and client .exe files
 
 ---
 
@@ -130,3 +133,4 @@ Current limitations:
 - Add a sandboxed Python execution environment
 - Support arguments for tasks and more robust serialization (e.g., JSON payloads)
 - Add a progress / streaming protocol for very large files or results
+
