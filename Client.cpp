@@ -208,10 +208,14 @@ int main(){
         return 1;
     }
 
+    std::string adress;
+    std::cout << "what is the ip adress? " << std::endl;
+    std::cin >> adress;
+
     sockaddr_in addr{};
     addr.sin_family = AF_INET;
     addr.sin_port = htons(8080);
-    inet_pton(AF_INET, "127.0.0.1", &addr.sin_addr);
+    inet_pton(AF_INET, adress.c_str(), &addr.sin_addr);
 
     if (connect(clientSocket, (sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR) {
         std::cerr << "Connect failed: " << WSAGetLastError();
