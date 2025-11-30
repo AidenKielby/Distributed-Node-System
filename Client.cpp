@@ -42,7 +42,13 @@ std::string runFile(const std::string& filePath, const std::string& functionName
 
     PyObject *sys = PyImport_ImportModule("sys");
     PyObject *modules = PyObject_GetAttrString(sys, "modules");
-    PyDict_DelItemString(modules, moduleName.c_str());
+
+    PyObject *modNameObj = PyUnicode_FromString(moduleName.c_str());
+    if (PyDict_Contains(modules, modNameObj)) {
+        PyDict_DelItem(modules, modNameObj);
+    }
+    Py_XDECREF(modNameObj);
+
     Py_XDECREF(modules);
     Py_XDECREF(sys);
 
