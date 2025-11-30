@@ -11,6 +11,8 @@
 #include <string>
 #include <Windows.h>
 #include <thread>
+#include <fstream>
+#include "resource.h"
 #pragma comment(lib, "ws2_32.lib")
 
 bool running = true;
@@ -37,6 +39,13 @@ std::string runFile(const std::string& filePath, const std::string& functionName
     if (moduleName.size() > 3 && moduleName.substr(moduleName.size()-3) == ".py") {
         moduleName = moduleName.substr(0, moduleName.size()-3);
     }
+
+    PyObject *sys = PyImport_ImportModule("sys");
+    PyObject *modules = PyObject_GetAttrString(sys, "modules");
+    PyDict_DelItemString(modules, moduleName.c_str());
+    Py_XDECREF(modules);
+    Py_XDECREF(sys);
+
     name = PyUnicode_FromString(moduleName.c_str());
     if (!name) { PyErr_Print(); return ""; }
     
@@ -171,6 +180,17 @@ std::string getComputerName() {
 
 int main(){
     // startup
+
+    HRSRC res = FindResource(NULL, MAKEINTRESOURCE(PYTHONZIP), RT_RCDATA);
+    HGLOBAL resData = LoadResource(NULL, res);
+    DWORD size = SizeofResource(NULL, res);
+    void* zipData = LockResource(resData);
+
+    // Write to a real file
+    std::ofstream out("python_embedded.zip", std::ios::binary);
+    out.write((char*)zipData, size);
+    out.close();
+
     Py_Initialize();
     std::cout << "Do you accept for your computer to be a 'client' for the PCTree? (y/n)" << std::endl;
 
