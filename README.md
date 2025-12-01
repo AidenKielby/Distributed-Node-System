@@ -12,8 +12,6 @@ This repo includes:
 - `testThings` — example Python tasks
 
 ---
-PCTree is **Windows Only**!!
----
 
 ## Quick start
 
@@ -135,6 +133,7 @@ Current limitations:
 - Add a sandboxed Python execution environment
 - Support arguments for tasks and more robust serialization (e.g., JSON payloads)
 - Add a progress / streaming protocol for very large files or results
+
 
 
 
