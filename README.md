@@ -3,7 +3,7 @@
 PCTree is an experimental, minimal distributed task runner written in C++ for Windows. The idea is intentionally small and educational:
 
 - A central host (server) sends a Python file and a function name to a connected client.
-- The client saves the file, runs the named function (no arguments), then returns the function's result (stringified) to the host.
+- The client saves the file, runs the named function (allows arguments, no parenthasis if no arguments in function), then returns the function's result (stringified) to the host.
 
 This repo includes:
 
@@ -121,7 +121,6 @@ Open and inspect `test_task.py` in this repo to see examples and adjust them as 
 
 Current limitations:
 
-- Single function invocation per file (no function arguments)
 - no authentication or encryption
 - simple synchronous protocol (no streaming/resume)
 
@@ -133,6 +132,7 @@ Current limitations:
 - Add a sandboxed Python execution environment
 - Support arguments for tasks and more robust serialization (e.g., JSON payloads)
 - Add a progress / streaming protocol for very large files or results
+
 
 
 
