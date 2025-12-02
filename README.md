@@ -126,14 +126,67 @@ Current limitations:
 
 ---
 
+## Python API (`pctree.pyd`)
+
+PCTree also provides a Python API via the prebuilt `pctree.pyd` in the `PythonAPI` folder. This allows you to interact with the master server entirely from Python, without compiling C++ code.
+
+### Usage
+
+```python
+import pctree
+
+# Start the master server
+pctree.start_master()
+
+# List connected clients
+clients = pctree.client_list()
+print(clients)  # Returns a string listing connected clients
+
+# Send a Python file to a specific client and execute a function
+result = pctree.send_file(client_index=0, file_path="test_task.py", function_name="hello")
+print(result)  # Prints the stringified result of the function
+
+# Ping a client to check if it's still responsive
+pctree.ping_client(client_index=0)
+
+# Stop the master server
+pctree.kill_master()
+```
+### API Functions
+| Function | Description |
+|:-------------|:--------------|
+| ```start_master()``` | Starts the master server, listening on port 8080. |
+| ```client_list()``` | Returns a string of all currently connected clients and their identifiers. |
+| ```send_file(client_index, file_path, function_name)``` | Sends a Python file to a connected client and executes the specified function. Returns the function result as a string. |
+| ```ping_client(client_index)``` | Sends a ping to a client to verify that it is still connected. |
+| ```kill_master()``` | Stops the master server and closes all client connections. |
+
+### Notes
+ - The Python API uses the same protocol as the C++ executables.
+ - Clients execute arbitrary Python code received from the server. Only use trusted clients and servers.
+ - The API is compatible with Python 3.14 by default (matches the prebuilt .pyd). Make sure your Python environment matches the compiled version.
+ - Multiple clients can be connected and addressed by their index in client_list().
+
+---
+
 ## Ideas / TODO
 
-- Add a secure channel / TLS + authentication
-- Add a sandboxed Python execution environment
-- Support arguments for tasks and more robust serialization (e.g., JSON payloads)
-- Add a progress / streaming protocol for very large files or results
-
-
-
-
+- JSON task lists, eg.
+```JSON
+{
+	"problems": {
+		[
+			"client": 0,
+			"file": "testThings/mandelbrot.py",
+			"function": "demo(300,200,50)"
+		],
+		[
+			"client": 1,
+			"file": "testThings/maze.py",
+			"function": "maze(10,10)"
+		]
+	}
+}
+```
+- use that ^^ to make a pasword decrypter using a keylist file and spit the file into chunks and send to clients
 
