@@ -166,6 +166,7 @@ pctree.kill_master()
  - Clients execute arbitrary Python code received from the server. Only use trusted clients and servers.
  - The API is compatible with Python 3.14 by default (matches the prebuilt .pyd). Make sure your Python environment matches the compiled version.
  - Multiple clients can be connected and addressed by their index in client_list().
+ - sadly i can only get it to work with one client at a time, if anyone can figure out how to do multiple at a time that would be great
 
 ---
 
@@ -189,4 +190,5 @@ pctree.kill_master()
 }
 ```
 - use that ^^ to make a pasword decrypter using a keylist file and spit the file into chunks and send to clients
+
 
