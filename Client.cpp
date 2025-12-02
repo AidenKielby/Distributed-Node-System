@@ -20,6 +20,16 @@
 bool running = true;
 HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 
+bool recv_all(SOCKET socket, char* buf, size_t len){
+    size_t recvd = 0;
+    while (recvd < len){
+        int n = recv(socket, buf + recvd, (int)std::min<size_t>(INT32_MAX, len - recvd), 0);
+        if (n <= 0) return false; // error or disconnect
+        recvd += n;
+    }
+    return true;
+}
+
 std::string runFile(const std::string& filePath, const std::string& functionName){
 
     std::string fn = functionName;
@@ -129,18 +139,17 @@ std::string runFile(const std::string& filePath, const std::string& functionName
 
 std::string recvFile(std::string filePath, SOCKET socket){
     uint32_t filesize_net;
-    recv(socket, (char*)&filesize_net, sizeof(filesize_net), 0);
+    if (!recv_all(socket, (char*)&filesize_net, 4)) { running = false;}
     size_t filesize = ntohl(filesize_net);
 
-    std::ofstream outfile(filePath, std::ios::binary | std::ios::trunc);
-
-    // recv func name
     uint32_t fnameLen_net;
-    recv(socket, (char*)&fnameLen_net, 4, 0);
+    if (!recv_all(socket, (char*)&fnameLen_net, 4)) { running = false;}
     uint32_t fnameLen = ntohl(fnameLen_net);
 
     std::string functionName(fnameLen, 0);
-    recv(socket, &functionName[0], fnameLen, 0);
+    if (!recv_all(socket, &functionName[0], fnameLen)) { running = false;}
+
+    std::ofstream outfile(filePath, std::ios::binary | std::ios::trunc);
 
     // recv file
     size_t bytesReceived = 0;
