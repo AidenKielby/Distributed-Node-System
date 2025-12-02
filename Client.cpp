@@ -3,7 +3,9 @@
 #include <fstream>
 #include <cstdint>
 #include <Python.h>
-
+#include <vector>
+#include <sstream>
+#include <algorithm>
 #include <WinSock2.h>
 #include <ws2tcpip.h>
 #include <crtdbg.h>
@@ -75,19 +77,23 @@ std::string runFile(const std::string& filePath, const std::string& functionName
     
     PyObject* args1 = nullptr;
     if (hasParamiters) {
-        PyObject* globals = PyDict_New();
-        PyDict_SetItemString(globals, "__builtins__", PyEval_GetBuiltins());
-
-        std::string tupleStr = "(" + paramStr + ")";
-        args1 = PyRun_String(tupleStr.c_str(), Py_eval_input, globals, globals);
-
-        Py_XDECREF(globals);
-        if (!args1) {
-            PyErr_Print();
-            Py_XDECREF(func);
-            Py_XDECREF(load_module);
-            return "";
+        // Build a tuple instead of PyRun_String
+        std::vector<PyObject*> pyArgs;
+        
+        // Split parameters by comma (basic)
+        std::istringstream ss(paramStr);
+        std::string item;
+        while (std::getline(ss, item, ',')) {
+            PyObject* arg = PyLong_FromLong(std::stol(item));
+            pyArgs.push_back(arg);
         }
+
+        args1 = PyTuple_New(pyArgs.size());
+        for (size_t i = 0; i < pyArgs.size(); ++i) {
+            PyTuple_SetItem(args1, i, pyArgs[i]); // Steals reference
+        }
+    } else {
+        args1 = PyTuple_New(0); // always pass a tuple
     }
 
     callFunc = PyObject_CallObject(func, args1);
