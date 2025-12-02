@@ -94,7 +94,35 @@ std::string runFile(const std::string& filePath, const std::string& functionName
         std::istringstream ss(paramStr);
         std::string item;
         while (std::getline(ss, item, ',')) {
-            PyObject* arg = PyLong_FromLong(std::stol(item));
+            // Trim spaces
+            item.erase(0, item.find_first_not_of(" \t\n\r"));
+            item.erase(item.find_last_not_of(" \t\n\r") + 1);
+
+            PyObject* arg = nullptr;
+
+            auto trim = [](std::string& s) {
+                s.erase(0, s.find_first_not_of(" \t\n\r\0"));
+                s.erase(s.find_last_not_of(" \t\n\r\0") + 1);
+            };
+
+            trim(item);
+
+            // Detect string literals
+            if ((item.front() == '\'' && item.back() == '\'') || 
+                (item.front() == '\"' && item.back() == '\"')) {
+                std::string s = item.substr(1, item.size() - 2); // remove quotes
+                arg = PyUnicode_FromString(s.c_str());
+            } else {
+                // try number
+                try {
+                    long val = std::stol(item);
+                    arg = PyLong_FromLong(val);
+                } catch (...) {
+                    // fallback: treat as string
+                    arg = PyUnicode_FromString(item.c_str());
+                }
+            }
+
             pyArgs.push_back(arg);
         }
 
