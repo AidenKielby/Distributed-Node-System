@@ -31,6 +31,8 @@ std::mutex clientNameMutex;
 
 std::mutex ioMutex;
 
+SOCKET masterSocket = INVALID_SOCKET;
+
 #ifdef _WIN32
 #include <windows.h>
 
@@ -152,36 +154,33 @@ void handleClient(SOCKET masterSocket){
     }
 }
 
-void sendToClient(SOCKET client, std::string filePath, std::string funcName){
+std::string sendToClient(int clientIndex, const std::string& filePath, const std::string& funcName){
+
+    SOCKET client = clients[clientIndex];
+
     const char type = 's';
     send(client, &type, 1, 0);
 
     if (sendFile(filePath, client, funcName) == 0){
         uint32_t size;
-        if (!recv_all(client, (char*)&size, 4)) return;
+        if (!recv_all(client, (char*)&size, 4)) return "error receiving  size";
         size = ntohl(size);
 
         const uint32_t size1 = size;
 
         std::vector<char> buf(size + 1);
-        recv_all(client, buf.data(), size);
-
-        {
-            std::lock_guard<std::mutex> lock(ioMutex);
-            std::cout << "\033[31;36mReturned value: " << buf.data() << "\033[0m" << std::endl;
-        }
-        
+        if (!recv_all(client, buf.data(), size)) return "error receiving response";
+        buf[size] = '\0'; // null terminate
+        return std::string(buf.data());
     }
     else{
-        {
-            std::lock_guard<std::mutex> lock(ioMutex);
-            std::cout <<"An error occured while sending the file" << std::endl;
-        }
+        return "error sending file";
     }
             
 }
 
-void pingClient(SOCKET client){
+void pingClient(int clientIndex){
+    SOCKET client = clients[clientIndex];
     const char type = 'p';
     if (send(client, &type, 1, 0) <= 0) {
         removeClient(client);
@@ -191,106 +190,32 @@ void pingClient(SOCKET client){
     recv_all(client, &resp, 1);
 }
 
-void handleInputs(){
-    std::string command;
-    while (running){
-        std::getline(std::cin, command);
+std::string listActiveClients(){
+    std::string clientsStr = "";
 
-        if (command == "quit") running = false;
-        else if (command == "client_list" || command == "clientl"){
-            std::cout << "Connected clients (indexes start at 0):\n";
-            {
-                std::lock(clientMutex, clientNameMutex);
-                std::lock_guard<std::mutex> lock1(clientMutex, std::adopt_lock);
-                std::lock_guard<std::mutex> lock2(clientNameMutex, std::adopt_lock);
-
-                {
-                    std::lock_guard<std::mutex> lock(ioMutex);
-                    for (int i = 0; i<clients.size(); i++) {
-                        std::cout << " * Client socket: " << clients[i] << ", " << clientNames[i] << "\n";
-                    }
-                }
-            }
-                
+    {
+        std::lock(clientMutex, clientNameMutex);
+        std::lock_guard<std::mutex> lock1(clientMutex, std::adopt_lock);
+        std::lock_guard<std::mutex> lock2(clientNameMutex, std::adopt_lock);
+        for (int i = 0; i<clients.size(); i++){
+            clientsStr += std::to_string(clients[i]) + ", " + clientNames[i] + "\n";
         }
-        else if (is_positive_integer(command)){
-
-            SOCKET client;
-            {
-                std::lock_guard<std::mutex> lock(clientMutex);
-
-                int index = std::stoi(command);
-                if (index < 0 || index >= clients.size()) {
-                    std::cout << "Invalid client index\n";
-                    return;
-                }
-                client = clients[index];
-            }
-
-            // ask what file
-            std::string filePath;
-            {
-                std::lock_guard<std::mutex> lock(ioMutex);
-                std::cout << "what file would you like to send? ";
-            }
-
-            std::getline(std::cin, filePath); // std::ws eats leftover newline
-
-            // function name
-            std::string funcName;
-            {
-                std::lock_guard<std::mutex> lock(ioMutex);
-                std::cout << "what function will the client execute? (only include the parenthesis if you have an input)  " << std::endl;
-            }
-            std::getline(std::cin, funcName); // read whole line (allows spaces, parentheses)
-
-            std::thread SendingThread(sendToClient, client, filePath, funcName);
-            SendingThread.detach();
-            {
-                std::lock_guard<std::mutex> lock(ioMutex);
-                std::cout << "sent... feel free to continue working here. Just dont use the same client please, that would be stupid. " << std::endl;
-            }
-        }
-        else if (command == "ping_all" || command == "pinga"){
-            {
-                for (int clientIndex = 0; clientIndex < clients.size(); clientIndex++){
-                    pingClient(clients[clientIndex]);
-                }
-            }
-        }
-        else{
-            {
-                std::lock_guard<std::mutex> lock(ioMutex);
-                std::cout << "unknown command: " << command << std::endl;
-                std::cout << "Available Commands: client_list/clientl, any integer value coresponding to a client eg. '1', ping_all/pinga" << std::endl;
-            }
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
+    return clientsStr;
 }
 
-
-
-int main(){
-    enableVirtualTerminalProcessing();
-    std::cout << "\033[1;36m";
-    std::cout << "\033[1;5H";  // Position cursor
-    std::cout << "\033[2J";    // Clear screen
-    std::cout << "\033[3m";    // Italic
-    std::cout << "Welcome to PCTree\n";
-    std::cout << "Distributed Node System Master\033[0m\n" << std::endl;
-
+void initMaster(){
     WSADATA wsa;
     if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
         std::cerr << "WSAStartup failed: " << WSAGetLastError();
-        return 1;
+        return;
     }
 
-    SOCKET masterSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    masterSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (masterSocket == INVALID_SOCKET) {
         std::cerr << "Error creating socket: " << WSAGetLastError();
         WSACleanup();
-        return 1;
+        return;
     }
 
     sockaddr_in serverAddress{};
@@ -303,25 +228,20 @@ int main(){
         closesocket(masterSocket);
         WSACleanup();
 
-        return 1;
+        return;
     }
 
     listen(masterSocket, SOMAXCONN);
 
-    std::cout << "Available Commands: client_list/clientl, any integer value coresponding to a client eg. '1', ping_all/pinga" << std::endl;
-
     std::thread ClientsThread(handleClient, masterSocket);
-    std::thread InputsThread(handleInputs);
 
     ClientsThread.detach();
-    InputsThread.join();
+}
 
-    for (size_t i = 0; i < clients.size(); ++i)
-        closesocket(clients[i]);
-    
-    closesocket(masterSocket);
+void killMaster(){
+    running = false;
+    for (SOCKET s : clients) closesocket(s);
+    if (masterSocket != INVALID_SOCKET) closesocket(masterSocket);
     WSACleanup();
-
-    return 0;
 }
 

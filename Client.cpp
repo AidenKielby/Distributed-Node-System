@@ -257,11 +257,18 @@ int main(){
 
     // rest of the stuff
     while(running){
-        std::string result = recvFile("newFile.py", clientSocket);
+        char type;
+        recv(clientSocket, &type, 1, 0);
+        if (type == 's'){
+            std::string result = recvFile("newFile.py", clientSocket);
 
-        uint32_t size = htonl(result.size());
-        send(clientSocket, (char*)&size, 4, 0);
-        send(clientSocket, result.c_str(), result.size(), 0);
+            uint32_t size = htonl(result.size());
+            send(clientSocket, (char*)&size, 4, 0);
+            send(clientSocket, result.c_str(), result.size(), 0);
+        }
+        else{
+            send(clientSocket, "p", 1, 0);
+        }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(25));
     }
