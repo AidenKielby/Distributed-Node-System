@@ -316,10 +316,11 @@ int main(){
             std::string result = recvFile("newFile.py", clientSocket);
 
             uint32_t size = htonl(result.size());
-            send_all(clientSocket, (char*)&size, 4);
-            send_all(clientSocket, result.c_str(), result.size());
+            send_all(clientSocket, (char*)&size, 4+1);
+            send_all(clientSocket, result.c_str(), result.size()+1);
         }
         else{
+            send(clientSocket, " ", 1, 0);
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(25));
