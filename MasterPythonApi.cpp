@@ -6,6 +6,7 @@
 #include <vector>
 
 #include <thread>
+#include <future>
 #include <WinSock2.h>
 #include <ws2tcpip.h>
 
@@ -163,7 +164,7 @@ std::string sendToClient(int clientIndex, const std::string& filePath, const std
 
     if (sendFile(filePath, client, funcName) == 0){
         uint32_t size;
-        if (!recv_all(client, (char*)&size, 4)) return "error receiving  size";
+        if (!recv_all(client, (char*)&size, 4)) return "error receiving size";
         size = ntohl(size);
 
         const uint32_t size1 = size;
@@ -177,6 +178,20 @@ std::string sendToClient(int clientIndex, const std::string& filePath, const std
         return "error sending file";
     }
             
+}
+
+std::future<std::string> sendToClientAsync(int clientIndex, const std::string& filePath, const std::string& funcName){
+    std::promise<std::string> prom;
+    auto fut = prom.get_future();
+
+    std::thread(
+        [p = std::move(prom), clientIndex, filePath, funcName]() mutable {
+            auto result = sendToClient(clientIndex, filePath, funcName);
+            p.set_value(result);
+        }
+    ).detach();
+
+    return fut;
 }
 
 void pingClient(int clientIndex){
