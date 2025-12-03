@@ -310,7 +310,7 @@ int main(){
             send(clientSocket, result.c_str(), result.size(), 0);
         }
         else{
-            send(clientSocket, "p", 1, 0);
+            send(clientSocket, "", 1, 0);
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(25));
