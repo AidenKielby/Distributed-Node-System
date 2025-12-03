@@ -20,6 +20,16 @@
 bool running = true;
 HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 
+bool send_all(SOCKET sock, const char* buf, size_t len) {
+    size_t sent = 0;
+    while (sent < len) {
+        int n = send(sock, buf + sent, (int)std::min<size_t>(INT32_MAX, len - sent), 0);
+        if (n <= 0) return false;
+        sent += n;
+    }
+    return true;
+}
+
 bool recv_all(SOCKET socket, char* buf, size_t len){
     size_t recvd = 0;
     while (recvd < len){
@@ -306,11 +316,10 @@ int main(){
             std::string result = recvFile("newFile.py", clientSocket);
 
             uint32_t size = htonl(result.size());
-            send(clientSocket, (char*)&size, 4, 0);
-            send(clientSocket, result.c_str(), result.size(), 0);
+            send_all(clientSocket, (char*)&size, 4);
+            send_all(clientSocket, result.c_str(), result.size());
         }
         else{
-            send(clientSocket, "", 1, 0);
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(25));
