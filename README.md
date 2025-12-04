@@ -227,7 +227,7 @@ PCTree is intentionally minimal and educational. It is designed to show:
 
 ## Ideas / TODO
 
-- JSON task lists, eg.
+- JSON task lists, eg. **(COMPLETED IN PYTHON API IMPLEMENTATION)**
 ```JSON
 {
 	"problems": {
@@ -244,7 +244,8 @@ PCTree is intentionally minimal and educational. It is designed to show:
 	}
 }
 ```
-- use that ^^ to make a pasword decrypter using a keylist file and spit the file into chunks and send to clients
+- use that ^^ to make a pasword decrypter using a keylist file and spit the file into chunks and send to clients 
+
 
 
 
