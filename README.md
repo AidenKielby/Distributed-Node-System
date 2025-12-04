@@ -169,6 +169,61 @@ pctree.kill_master()
  - sadly i can only get it to work with one client at a time, if anyone can figure out how to do multiple at a time that would be great
 
 ---
+## What PCTree Does (Explained for Non-Programmers)
+
+PCTree works like a simple distributed system where one computer acts as the **master** and other computers act as **clients**. The master sends small Python tasks to the clients, and each client runs the task and sends back the result.
+
+### How It Works
+
+1. The **master** starts first and waits for clients to connect.  
+2. Each **client** connects and identifies itself to the master.  
+3. When the master chooses a client, it sends:  
+   - a Python file  
+   - a function name inside that file  
+   - (optionally) any input values that function needs  
+4. The client:  
+   - saves the file  
+   - runs the requested function in Python  
+   - captures the output  
+   - sends the result back to the master  
+5. The master prints the returned result.
+
+### What This System Is Good For
+
+- Running Python tasks on multiple computers  
+- Offloading heavy calculations  
+- Learning how distributed systems communicate  
+- Experimenting with remote execution  
+- Demonstrating how a master/worker system works in practice  
+
+### What the System Does *Not* Do
+
+- It does **not** check whether the Python code sent by the master is safe.  
+- It does **not** encrypt communication.  
+- It is **not** meant for use on the open internet without additional security.
+
+### Easy Way to Think About It
+
+Imagine a teacher handing worksheets to students:
+
+- **Teacher = Master**  
+- **Students = Clients**  
+- **Worksheet = Python file**  
+- **Question = Function name**  
+- **Answer = Client’s returned result**
+
+The teacher gives each student a task, the student solves it, and hands the answer back.  
+That’s exactly what PCTree does — but with computers and Python scripts.
+
+### Purpose of This Project
+
+PCTree is intentionally minimal and educational. It is designed to show:
+
+- How machines connect to each other  
+- How files move between systems  
+- How remote code execution works  
+- How to build a simple distributed system from scratch
+---
 
 ## Ideas / TODO
 
@@ -190,5 +245,6 @@ pctree.kill_master()
 }
 ```
 - use that ^^ to make a pasword decrypter using a keylist file and spit the file into chunks and send to clients
+
 
 
