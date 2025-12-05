@@ -313,11 +313,11 @@ int main(){
         char type;
         recv(clientSocket, &type, 1, 0);
         if (type == 's'){
-            std::string result = recvFile("newFile.py", clientSocket);
+            std::string result = "R" + recvFile("newFile.py", clientSocket);
 
             uint32_t size = htonl(result.size());
-            send_all(clientSocket, (char*)&size, 4+1);
-            send_all(clientSocket, result.c_str(), result.size()+1);
+            send_all(clientSocket, (char*)&size, 4);
+            send_all(clientSocket, result.c_str(), result.size());
         }
         else{
             send(clientSocket, " ", 1, 0);
